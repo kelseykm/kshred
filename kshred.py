@@ -4,6 +4,12 @@
 
 import os, sys
 
+version = 0.1
+normal = '\033[0;39m'
+green = '\033[1;32m'
+red = '\033[1;31m'
+orange = '\033[1;33m'
+
 class Shredder(object):
     """Class for shredding files"""
 
@@ -90,9 +96,11 @@ def usage():
 Usage: kshred.py <FILE> <FILE> ...
 
 Add the file(s) you want shredded as arguments.
+    NB: The files must be regular files.
 
 Options:
     -h  Show usage
+    -v  Show version number
     """
     print(instructions)
     sys.exit()
@@ -100,16 +108,27 @@ Options:
 def main():
     if not sys.argv[1:] or sys.argv[1] == "-h":
         usage()
+    elif sys.argv[1] == "-v":
+        print(f"{green}[INFO]{normal} VERSION {orange}{version}{normal}")
+        sys.exit()
     
     for infile in sys.argv[1:]:
         if not os.path.exists(infile):
-            print(f"[KSHRED] {infile} DOES NOT EXIST")
+            print(f"{red}[ERROR]{normal} {orange}{infile}{normal} DOES NOT EXIST")
+            continue
+        elif not os.path.isfile(infile):
+            print(f"{red}[ERROR]{normal} {orange}{infile}{normal} IS NOT A REGULAR FILE")
             continue
         
-        with open(infile, "r+b") as f:
-            shredder_obj = Shredder(f)
-            shredder_obj.shred_file()
-            shredder_obj.delete_file()
+        try:
+            with open(infile, "r+b") as f:
+                shredder_obj = Shredder(f)
+                shredder_obj.shred_file()
+                shredder_obj.delete_file()
+        except:
+            print(f"{red}[ERROR]{normal} {orange}{infile}{normal} SHREDDING FAILED")
+        else:
+            print(f"{green}[INFO]{normal} {orange}{infile}{normal} SHREDDED SUCCESSFULLY")
 
 if __name__ == "__main__":
     main()
