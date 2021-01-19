@@ -2,13 +2,18 @@
 
 #Written by kelseykm
 
-import os, sys
+import os
+import sys
+import threading
+from time import sleep
 
-version = 0.1
+version = 0.2
 normal = '\033[0;39m'
 green = '\033[1;32m'
 red = '\033[1;31m'
 orange = '\033[1;33m'
+cycle = "|/-\\"
+cycle_stop = False
 
 class Shredder(object):
     """Class for shredding files"""
@@ -28,31 +33,22 @@ class Shredder(object):
     def generate_randoms(self, number_to_generate):
         return os.urandom(number_to_generate)
 
-    def number_chunks(self):
-        self.number_of_chunks = 0
-        def counter():
-            while True:
-                chunk = self.file_object.read(self.chunk_size)
-                if not chunk:
-                    return
-                yield "chunk"
-
-        for _ in counter():
-            self.number_of_chunks += 1
+    @property
+    def number_of_chunks(self):
+        x = self.file_size/self.chunk_size
+        if type(x) is float:
+            return x.__floor__() + 1
+        else:
+            return x
 
     @property
     def length_of_last_chunk(self):
-        self.file_object.seek(0)
-        chunks_left = self.number_of_chunks
-
-        while True:
-            chunk = self.file_object.read(self.chunk_size)
-            if chunks_left == 1:
-                return len(chunk)
-            chunks_left -= 1
+        if self.file_size % self.chunk_size == 0:
+            return self.chunk_size
+        else:
+            return self.file_size % self.chunk_size
 
     def shred_file(self):
-        self.number_chunks()
         passes = self.number_of_chunks - 1
         last = self.length_of_last_chunk
 
@@ -91,6 +87,16 @@ class Shredder(object):
     def delete_file(self):
         os.remove(self.file_name)
 
+def cycler():
+    while not cycle_stop:
+        for c in cycle:
+            sys.stdout.write(f"{green}[INFO]{normal} ")
+            sys.stdout.write(f"{orange}[ {normal}{c}{orange} ]")
+            sys.stdout.write(f" SHREDDING...{normal}")
+            sys.stdout.write("\r")
+            sys.stdout.flush()
+            sleep(0.5)
+
 def usage():
     instructions = """
 Usage: kshred.py <FILE> <FILE> ...
@@ -111,7 +117,7 @@ def main():
     elif sys.argv[1] == "-v":
         print(f"{green}[INFO]{normal} VERSION {orange}{version}{normal}")
         sys.exit()
-    
+
     for infile in sys.argv[1:]:
         if not os.path.exists(infile):
             print(f"{red}[ERROR]{normal} {orange}{infile}{normal} DOES NOT EXIST")
@@ -119,15 +125,25 @@ def main():
         elif not os.path.isfile(infile):
             print(f"{red}[ERROR]{normal} {orange}{infile}{normal} IS NOT A REGULAR FILE")
             continue
-        
+
+        global cycle_stop
+        cycle_stop = False
+
+        thread = threading.Thread(target=cycler)
+        thread.start()
+
         try:
             with open(infile, "r+b") as f:
                 shredder_obj = Shredder(f)
                 shredder_obj.shred_file()
                 shredder_obj.delete_file()
         except:
+            cycle_stop = True
+            thread.join()
             print(f"{red}[ERROR]{normal} {orange}{infile}{normal} SHREDDING FAILED")
         else:
+            cycle_stop = True
+            thread.join()
             print(f"{green}[INFO]{normal} {orange}{infile}{normal} SHREDDED SUCCESSFULLY")
 
 if __name__ == "__main__":
