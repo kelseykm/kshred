@@ -7,7 +7,7 @@ import sys
 import threading
 from time import sleep
 
-version = 0.2
+version = "0.2.1"
 normal = '\033[0;39m'
 green = '\033[1;32m'
 red = '\033[1;31m'
@@ -34,16 +34,19 @@ class Shredder(object):
         return os.urandom(number_to_generate)
 
     @property
-    def number_of_chunks(self):
-        x = self.file_size/self.chunk_size
-        if type(x) is float:
-            return x.__floor__() + 1
+    def number_of_chunks(self):            
+        if self.file_size == 0:
+            return self.file_size
+        elif self.file_size != 0 and self.file_size % self.chunk_size != 0:
+            return self.file_size // self.chunk_size + 1
         else:
-            return x
+            return self.file_size / self.chunk_size
 
     @property
     def length_of_last_chunk(self):
-        if self.file_size % self.chunk_size == 0:
+        if self.file_size == 0:
+            return self.file_size
+        elif self.file_size != 0 and self.file_size % self.chunk_size == 0:
             return self.chunk_size
         else:
             return self.file_size % self.chunk_size
