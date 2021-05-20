@@ -15,7 +15,7 @@ orange = '\033[1;33m'
 cycle = "|/-\\"
 cycle_stop = False
 
-class Shredder(object):
+class Shredder:
     """Class for shredding files"""
 
     def __init__(self, file_object):
