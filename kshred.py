@@ -7,7 +7,7 @@ import sys
 import threading
 from time import sleep
 
-version = "0.2.1"
+version = "0.2.2"
 normal = '\033[0;39m'
 green = '\033[1;32m'
 red = '\033[1;31m'
